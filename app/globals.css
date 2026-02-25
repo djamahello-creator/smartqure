@@ -1,3 +1,9 @@
+/* Tailwind v4 — activates PostCSS compilation pipeline */
+@import "tailwindcss";
+
+/* Legacy v3 config (colours, fonts, custom tokens) */
+@config "../tailwind.config.js";
+
 * {
   margin: 0;
   padding: 0;

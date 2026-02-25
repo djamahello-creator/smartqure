@@ -68,6 +68,9 @@ export async function POST(req) {
       if (!medication_name) {
         return Response.json({ error: 'medication_name is required for manual type' }, { status: 400 });
       }
+      if (medication_name.trim().length < 3) {
+        return Response.json({ error: 'Please enter at least 3 characters for the medication name' }, { status: 400 });
+      }
       verificationInput = {
         medication_name,
         manufacturer_name: manufacturer_name || null,

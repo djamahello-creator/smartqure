@@ -58,7 +58,11 @@ const ReportFlow = ({ scan, onNavigate }) => {
       onNavigate('history');
     } catch (err) {
       console.error('Report submission error:', err);
-      setError(err.message || 'Failed to submit report. Please try again.');
+      // Never expose raw Supabase/RLS errors to the user
+      const isRls = err?.code === '42501' || err?.message?.includes('row-level security') || err?.message?.includes('policy');
+      setError(isRls
+        ? 'Unable to submit report right now. Please try again later or contact support.'
+        : 'Failed to submit report. Please try again.');
     } finally {
       setLoading(false);
     }

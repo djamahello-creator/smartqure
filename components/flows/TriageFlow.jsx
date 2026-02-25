@@ -333,6 +333,7 @@ export default function TriageFlow({ navigateTo, user }) {
       minHeight: '100vh', background: C.bg, color: C.text,
       fontFamily: "'DM Sans', system-ui, sans-serif",
       display: 'flex', flexDirection: 'column',
+      paddingBottom: 72,
     }}>
       {/* Keyframes */}
       <style>{`

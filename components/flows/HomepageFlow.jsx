@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import {
-  Calendar, Pill, MessageCircle, Bell, ChevronRight,
+  Calendar, Pill, MessageCircle, Bell, Mail, ChevronRight,
   FileText, Activity, Heart, Droplet, Shield,
   CheckCircle2, AlertTriangle, TestTube, Loader2
 } from 'lucide-react';
@@ -117,6 +117,13 @@ const HomepageFlow = ({ onNavigate }) => {
             </p>
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onNavigate('alerts')}
+              className="relative flex items-center justify-center rounded-full transition-all"
+              style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.07)' }}
+            >
+              <Mail className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} />
+            </button>
             <button
               onClick={() => onNavigate('alerts')}
               className="relative flex items-center justify-center rounded-full transition-all"

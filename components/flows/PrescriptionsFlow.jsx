@@ -70,23 +70,37 @@ const PrescriptionsFlow = ({ onNavigate }) => {
 
   // ─── Loading ──────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A1628' }}>
       <div className="text-center">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-        <p className="text-sm text-gray-500">Loading prescriptions...</p>
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: '#14A085' }} />
+        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Loading prescriptions...</p>
       </div>
     </div>
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm sticky top-0 z-50">
+    <div className="min-h-screen pb-24" style={{ background: '#0A1628', fontFamily: "'Inter', sans-serif" }}>
+      {/* Header */}
+      <div className="sticky top-0 z-50" style={{
+        background: 'rgba(10,22,40,0.95)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
         <div className="max-w-md mx-auto px-5 py-4 flex items-center gap-3">
-          <button onClick={() => onNavigate('homepage')} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
-            <ChevronRight className="w-5 h-5 rotate-180" />
+          <button
+            onClick={() => onNavigate('homepage')}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'rgba(255,255,255,0.07)', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            }}
+          >
+            <ChevronRight className="w-5 h-5 rotate-180" style={{ color: 'rgba(255,255,255,0.7)' }} />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Prescriptions</h1>
+          <h1 style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', fontFamily: "'Space Grotesk', sans-serif" }}>
+            Prescriptions
+          </h1>
         </div>
       </div>
 
@@ -94,101 +108,158 @@ const PrescriptionsFlow = ({ onNavigate }) => {
 
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow active:scale-[0.98]">
-            <Upload className="w-8 h-8 mb-2" />
-            <div className="font-semibold">Upload</div>
-            <div className="text-xs text-blue-100">Add prescription photo</div>
+          <button style={{
+            background: 'linear-gradient(135deg, #1E3A5F, #0D2D4A)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16, padding: 16, color: '#fff', textAlign: 'left', cursor: 'pointer',
+          }}>
+            <Upload className="w-8 h-8 mb-2" style={{ color: '#14A085' }} />
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Upload</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>Add prescription photo</div>
           </button>
           <button
             onClick={() => onNavigate('drug-interaction')}
-            className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #0D3D3D, #0A2E2E)',
+              border: '1px solid rgba(13,115,119,0.3)',
+              borderRadius: 16, padding: 16, color: '#fff', textAlign: 'left', cursor: 'pointer',
+            }}
           >
-            <Search className="w-8 h-8 mb-2" />
-            <div className="font-semibold">Check Drugs</div>
-            <div className="text-xs text-teal-100">Interactions</div>
+            <Search className="w-8 h-8 mb-2" style={{ color: '#14A085' }} />
+            <div style={{ fontWeight: 700, fontSize: 14 }}>Check Drugs</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>Interactions</div>
           </button>
         </div>
 
         {/* Request Review */}
-        <button className="w-full bg-white rounded-2xl p-4 shadow-sm mb-6 flex items-center justify-between hover:shadow-md transition-all active:scale-[0.98]">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-6 h-6 text-purple-600" />
+        <button style={{
+          width: '100%', background: '#111D33',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 16, padding: 16, marginBottom: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 44, height: 44, background: 'rgba(168,85,247,0.15)',
+              borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <FileText className="w-5 h-5" style={{ color: '#A855F7' }} />
             </div>
-            <div className="text-left">
-              <div className="font-semibold text-gray-900">Request Review</div>
-              <div className="text-sm text-gray-500">Get expert assessment in 48h</div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: '#FFFFFF' }}>Request Review</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>Get expert assessment in 48h</div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-gray-400" />
+          <ChevronRight className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.3)' }} />
         </button>
 
         {/* Error state */}
         {error && (
-          <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-4 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div style={{
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 10,
+          }}>
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#EF4444' }} />
             <div>
-              <p className="text-sm text-red-800 font-medium">{error}</p>
-              <button onClick={fetchPrescriptions} className="text-xs text-red-600 underline mt-1">Retry</button>
+              <p style={{ fontSize: 13, color: '#EF4444', fontWeight: 600 }}>{error}</p>
+              <button onClick={fetchPrescriptions} style={{
+                fontSize: 12, color: '#EF4444', background: 'none', border: 'none',
+                textDecoration: 'underline', cursor: 'pointer', marginTop: 4,
+              }}>Retry</button>
             </div>
           </div>
         )}
 
         {/* Prescriptions list */}
         <div>
-          <h2 className="text-base font-bold text-gray-900 mb-3">My Prescriptions</h2>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', marginBottom: 12 }}>
+            MY PRESCRIPTIONS
+          </h2>
 
           {prescriptions.length === 0 && !error ? (
-            <div className="bg-white rounded-2xl p-8 shadow-sm text-center border border-gray-100">
-              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FileText className="w-7 h-7 text-gray-400" />
+            <div style={{
+              background: '#111D33', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 16, padding: 32, textAlign: 'center',
+            }}>
+              <div style={{
+                width: 52, height: 52, background: 'rgba(255,255,255,0.05)',
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 12px',
+              }}>
+                <FileText className="w-6 h-6" style={{ color: 'rgba(255,255,255,0.3)' }} />
               </div>
-              <p className="font-semibold text-gray-700 mb-1">No prescriptions yet</p>
-              <p className="text-sm text-gray-500 mb-4">Upload a prescription photo or ask your doctor to issue one through SmartQure</p>
-              <button className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 flex items-center gap-2 mx-auto">
+              <p style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>No prescriptions yet</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginBottom: 16, lineHeight: 1.5 }}>
+                Upload a prescription photo or ask your doctor to issue one through SmartQure
+              </p>
+              <button style={{
+                padding: '10px 20px',
+                background: 'linear-gradient(135deg, #0D7377, #14A085)',
+                border: 'none', borderRadius: 12, color: '#fff',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+              }}>
                 <Plus className="w-4 h-4" /> Add Prescription
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {prescriptions.map(rx => {
                 const status = getStatus(rx);
+                const statusColors = {
+                  active:  { bg: 'rgba(16,185,129,0.1)',  text: '#10B981' },
+                  filled:  { bg: 'rgba(59,130,246,0.1)',  text: '#60A5FA' },
+                  expired: { bg: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.4)' },
+                };
+                const sc = statusColors[status] || statusColors.expired;
                 return (
                   <button
                     key={rx.id}
-                    className="w-full bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all text-left active:scale-[0.98]"
+                    style={{
+                      width: '100%', background: '#111D33',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                      borderRadius: 14, padding: 14, textAlign: 'left', cursor: 'pointer',
+                    }}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="font-semibold text-gray-900 truncate">{rx.medication_name}</div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: 12 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#FFFFFF' }}>{rx.medication_name}</div>
                         {rx.dosage && rx.frequency && (
-                          <div className="text-sm text-gray-500 mt-0.5">{rx.dosage} · {rx.frequency}</div>
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{rx.dosage} · {rx.frequency}</div>
                         )}
                         {rx.doctor_name && (
-                          <div className="text-xs text-gray-400 mt-1">{rx.doctor_name}</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{rx.doctor_name}</div>
                         )}
                         {rx.created_at && (
-                          <div className="text-xs text-gray-400 mt-0.5">{formatDate(rx.created_at)}</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{formatDate(rx.created_at)}</div>
                         )}
                       </div>
-                      <span className={`px-3 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${statusStyle(status)}`}>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+                        background: sc.bg, color: sc.text, flexShrink: 0,
+                      }}>
                         {status}
                       </span>
                     </div>
 
                     {rx.expiry_date && (
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
                         Expires: {formatDate(rx.expiry_date)}
                       </div>
                     )}
 
                     {/* AI review badge */}
                     {rx.ai_review_status && rx.ai_review_status !== 'pending' && (
-                      <div className={`mt-2 text-xs px-2 py-1 rounded-lg inline-block font-medium ${
-                        rx.ai_review_status === 'approved' ? 'bg-green-50 text-green-700' :
-                        rx.ai_review_status === 'flagged'  ? 'bg-amber-50 text-amber-700' :
-                        'bg-gray-50 text-gray-600'
-                      }`}>
+                      <div style={{
+                        marginTop: 6, fontSize: 11, padding: '2px 8px',
+                        borderRadius: 6, display: 'inline-block', fontWeight: 600,
+                        background: rx.ai_review_status === 'approved' ? 'rgba(16,185,129,0.1)' :
+                                    rx.ai_review_status === 'flagged'  ? 'rgba(252,163,17,0.1)' :
+                                    'rgba(255,255,255,0.07)',
+                        color: rx.ai_review_status === 'approved' ? '#10B981' :
+                               rx.ai_review_status === 'flagged'  ? '#FCA311' :
+                               'rgba(255,255,255,0.4)',
+                      }}>
                         AI Review: {rx.ai_review_status}
                       </div>
                     )}

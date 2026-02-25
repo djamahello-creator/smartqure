@@ -94,9 +94,13 @@ export async function POST(req) {
     } else if (faceMatchConfidence >= 70) {
       result     = 'caution';
       confidence = faceMatchConfidence;
-    } else {
+    } else if (faceMatchConfidence > 0) {
       result     = 'caution';
-      confidence = Math.max(faceMatchConfidence, 40); // minimum score for "attempted"
+      confidence = faceMatchConfidence;
+    } else {
+      // No face detected or zero match — fail cleanly, no artificial floor
+      result     = 'failed';
+      confidence = 0;
     }
 
     // ── Step 4: Save to Supabase ─────────────────────────────────────────────

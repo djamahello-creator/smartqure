@@ -1,344 +1,360 @@
 // components/flows/HomepageFlow.jsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Shield, Camera, FileText, Bell, Menu, ChevronRight, CheckCircle2, AlertTriangle, AlertCircle, MessageCircle, MapPin } from 'lucide-react';
+import {
+  Calendar, Pill, MessageCircle, Bell, ChevronRight,
+  FileText, Activity, Heart, Droplet, Shield,
+  CheckCircle2, AlertTriangle, TestTube, Loader2
+} from 'lucide-react';
 import { supabase, getCurrentUser } from '../../lib/supabase';
 
 const HomepageFlow = ({ onNavigate }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [recentScans, setRecentScans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser]         = useState(null);
+  const [nextAppointment, setNextAppointment] = useState(null);
+  const [recentScans, setRecentScans]         = useState([]);
+  const [loading, setLoading]                 = useState(true);
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
 
-  const fetchUserData = async () => {
+  const fetchAll = async () => {
     try {
       const user = await getCurrentUser();
-      if (!user) {
-        onNavigate('welcome');
-        return;
-      }
+      if (!user) { onNavigate('welcome'); return; }
 
-      // Fetch user profile
+      // Profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
 
-      if (profile) {
-        setCurrentUser({
-          name: profile.first_name || 'User',
-          fullName: profile.full_name || profile.first_name || 'User',
-          email: profile.email || user.email,
-          verified: profile.verified || false,
-        });
-      } else {
-        setCurrentUser({
-          name: user.user_metadata?.first_name || 'User',
-          fullName: user.user_metadata?.first_name || 'User',
-          email: user.email,
-          verified: false,
-        });
-      }
+      const firstName = profile?.first_name || user.user_metadata?.first_name || '';
+      const lastName  = profile?.last_name  || user.user_metadata?.last_name  || '';
+      const fullName  = [firstName, lastName].filter(Boolean).join(' ') || 'there';
+      setCurrentUser({
+        name: firstName || fullName,
+        fullName,
+        email: profile?.email || user.email,
+        verified: profile?.verified || false,
+      });
 
-      // Fetch recent scans
+      // Next upcoming appointment
+      const { data: appts } = await supabase
+        .from('appointments')
+        .select('*, appointment_services(service_name)')
+        .eq('user_id', user.id)
+        .in('status', ['scheduled', 'confirmed'])
+        .gte('appointment_date', new Date().toISOString().split('T')[0])
+        .order('appointment_date', { ascending: true })
+        .limit(1);
+      if (appts?.length) setNextAppointment(appts[0]);
+
+      // Recent scans
       const { data: scans } = await supabase
         .from('scans')
         .select('*')
         .eq('user_id', user.id)
         .order('scanned_at', { ascending: false })
-        .limit(5);
+        .limit(3);
+      if (scans) setRecentScans(scans);
 
-      if (scans) {
-        const formattedScans = scans.map(scan => ({
-          id: scan.id,
-          name: scan.medication_name,
-          result: scan.result,
-          confidence: scan.confidence,
-          time: new Date(scan.scanned_at).toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-          }),
-          hasAlert: scan.has_alert,
-          batch: scan.batch_number || 'N/A',
-          manufacturer: scan.manufacturer || 'Unknown'
-        }));
-        setRecentScans(formattedScans);
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
+    } catch (err) {
+      console.error('Homepage fetch error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getResultIcon = (result) => {
-    switch (result) {
-      case 'verified':
-        return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
-      case 'caution':
-        return <AlertTriangle className="w-4 h-4 text-amber-600" />;
-      case 'fake':
-      case 'high_risk':
-        return <AlertCircle className="w-4 h-4 text-rose-600" />;
-      default:
-        return <CheckCircle2 className="w-4 h-4 text-gray-400" />;
-    }
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
-  const getResultBadge = (result) => {
-    switch (result) {
-      case 'verified':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      case 'caution':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'fake':
-      case 'high_risk':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
+  const resultColor = (r) => {
+    if (r === 'verified') return '#10B981';
+    if (r === 'caution')  return '#FCA311';
+    return '#EF4444';
   };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    onNavigate('welcome');
+  const resultLabel = (r) => {
+    if (r === 'verified') return 'Verified';
+    if (r === 'caution')  return 'Caution';
+    return 'High Risk';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="w-12 h-12 text-teal-500 animate-pulse mx-auto mb-3" />
-          <p className="text-sm text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A1628' }}>
+        <div className="flex flex-col items-center space-y-3">
+          <div style={{
+            width: 56, height: 56, borderRadius: 16,
+            background: 'linear-gradient(135deg, #0D7377, #14A085)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Shield className="w-7 h-7 text-white" />
+          </div>
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#14A085' }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-md mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="bg-teal-500 rounded-lg p-1.5">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-gray-900">SmartQure</h1>
-                <p className="text-xs text-gray-500">Health &amp; Medicine Safety</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => onNavigate('alerts')}
-                className="relative p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full"></span>
-              </button>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <Menu className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen pb-24" style={{ background: '#0A1628', fontFamily: "'Inter', sans-serif" }}>
 
-          {menuOpen && (
-            <div className="absolute right-4 top-16 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-              <button
-                onClick={() => { onNavigate('profile'); setMenuOpen(false); }}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Profile Settings
-              </button>
-              <button
-                onClick={() => { onNavigate('alerts'); setMenuOpen(false); }}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-              >
-                News Alerts
-              </button>
-              <div className="border-t border-gray-200 my-1"></div>
-              <button
-                onClick={handleSignOut}
-                className="w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
+      {/* ── Header ── */}
+      <div className="sticky top-0 z-50" style={{
+        background: 'rgba(10,22,40,0.95)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+      }}>
+        <div className="max-w-md mx-auto px-5 py-4 flex justify-between items-center">
+          <div>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 1 }}>{greeting()},</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF', fontFamily: "'Space Grotesk', sans-serif" }}>
+              {currentUser?.name}
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onNavigate('alerts')}
+              className="relative flex items-center justify-center rounded-full transition-all"
+              style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.07)' }}
+            >
+              <Bell className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.7)' }} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ background: '#EF4444' }} />
+            </button>
+            <button
+              onClick={() => onNavigate('profile')}
+              className="flex items-center justify-center rounded-full transition-all"
+              style={{
+                width: 40, height: 40,
+                background: 'linear-gradient(135deg, #0D7377, #14A085)',
+              }}
+            >
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>
+                {currentUser?.name?.[0]?.toUpperCase() || 'U'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">
-            Welcome back, {currentUser?.name}
-          </h2>
-          <p className="text-sm text-gray-600">What can we help you with today?</p>
-        </div>
+      <div className="max-w-md mx-auto px-5">
 
-        {/* ID Verification Banner */}
+        {/* ── ID Verification banner ── */}
         {!currentUser?.verified && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-amber-900 mb-1">Verify Your ID</h3>
-                <p className="text-xs text-amber-700 mb-3">
-                  Unlock full access to prescriptions, reminders, and pharmacy routing
-                </p>
-                <button
-                  onClick={() => onNavigate('id-verification')}
-                  className="bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-amber-700 active:scale-[0.98] transition-all"
-                >
-                  Verify Now
-                </button>
-              </div>
+          <div className="mt-5 rounded-2xl p-4 flex items-start space-x-3" style={{
+            background: 'rgba(252,163,17,0.1)',
+            border: '1px solid rgba(252,163,17,0.25)',
+          }}>
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#FCA311' }} />
+            <div className="flex-1">
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#FCA311', marginBottom: 2 }}>Verify your ID</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
+                Unlock prescriptions, pharmacy routing and full health records
+              </p>
+              <button
+                onClick={() => onNavigate('id-verification')}
+                className="px-4 py-1.5 rounded-lg transition-all active:scale-95"
+                style={{ background: '#FCA311', color: '#0A1628', fontSize: 12, fontWeight: 700 }}
+              >
+                Verify Now
+              </button>
             </div>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="space-y-3 mb-8">
-
-          {/* AI Care Navigator — primary CTA */}
+        {/* ── Upcoming appointment banner ── */}
+        {nextAppointment && (
           <button
-            onClick={() => onNavigate('triage')}
-            className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-xl p-4 flex items-center justify-between shadow-md active:scale-[0.98] transition-all"
+            onClick={() => onNavigate('appointments')}
+            className="w-full mt-5 rounded-2xl p-4 text-left transition-all active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #0C2434 0%, #14213D 100%)',
+              border: '1px solid rgba(14,165,233,0.25)',
+            }}
           >
-            <div className="flex items-center space-x-3">
-              <div className="bg-white/20 rounded-lg p-2">
-                <MessageCircle className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-semibold">Find Care</h3>
-                <p className="text-xs text-teal-100">Talk to our AI care navigator</p>
-              </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#0EA5E9', letterSpacing: '0.08em', marginBottom: 6 }}>
+              UPCOMING APPOINTMENT
             </div>
-            <ChevronRight className="w-5 h-5 text-white/80" />
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#FFFFFF', marginBottom: 3 }}>
+              {nextAppointment.appointment_services?.[0]?.service_name || nextAppointment.appointment_type}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+              {new Date(nextAppointment.appointment_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {' · '}{nextAppointment.appointment_time?.slice(0, 5)}
+            </div>
+            {nextAppointment.location_name && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                {nextAppointment.location_name}
+              </div>
+            )}
           </button>
+        )}
 
-          {/* Scan medicine */}
-          <button
-            onClick={() => onNavigate('scanner')}
-            className="w-full bg-white border border-gray-200 hover:bg-gray-50 rounded-xl p-3.5 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-teal-50 rounded-lg p-2">
-                <Camera className="w-4 h-4 text-teal-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-semibold text-gray-900">Verify Medicine</h3>
-                <p className="text-xs text-gray-500">Scan barcode or enter details</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-
-          {/* Manual entry */}
-          <button
-            onClick={() => onNavigate('manual-entry')}
-            className="w-full bg-white border border-gray-200 hover:bg-gray-50 rounded-xl p-3.5 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-gray-100 rounded-lg p-2">
-                <FileText className="w-4 h-4 text-gray-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-semibold text-gray-900">Enter Medicine Name</h3>
-                <p className="text-xs text-gray-500">No barcode? Type details manually</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
-
-          {/* Find a pharmacy */}
-          <button
-            onClick={() => onNavigate('pharmacies')}
-            className="w-full bg-white border border-gray-200 hover:bg-gray-50 rounded-xl p-3.5 flex items-center justify-between shadow-sm active:scale-[0.98] transition-all"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="bg-teal-50 rounded-lg p-2">
-                <MapPin className="w-4 h-4 text-teal-600" />
-              </div>
-              <div className="text-left">
-                <h3 className="text-sm font-semibold text-gray-900">Find a Pharmacy</h3>
-                <p className="text-xs text-gray-500">Verified pharmacies near you</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          </button>
+        {/* ── Quick Actions ── */}
+        <div className="mt-6">
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#14A085', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>
+            Quick Actions
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                icon: Calendar,
+                label: 'Book Appointment',
+                sub: 'Lab, GP, dentistry',
+                gradient: 'linear-gradient(135deg, #0284C7, #0EA5E9)',
+                action: 'booking',
+              },
+              {
+                icon: MessageCircle,
+                label: 'AI Care Navigator',
+                sub: 'Describe your symptoms',
+                gradient: 'linear-gradient(135deg, #0D7377, #14A085)',
+                action: 'triage',
+              },
+              {
+                icon: Pill,
+                label: 'Verify Medicine',
+                sub: 'Scan or type a drug',
+                gradient: 'linear-gradient(135deg, #047857, #10B981)',
+                action: 'scanner',
+              },
+              {
+                icon: FileText,
+                label: 'Health Records',
+                sub: 'Conditions, allergies, meds',
+                gradient: 'linear-gradient(135deg, #7C3AED, #8B5CF6)',
+                action: 'health-docs',
+              },
+            ].map((item) => (
+              <button
+                key={item.action}
+                onClick={() => onNavigate(item.action)}
+                className="rounded-2xl p-4 text-left transition-all active:scale-[0.97]"
+                style={{
+                  background: '#111D33',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                <div className="flex items-center justify-center mb-3" style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: item.gradient,
+                }}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF', lineHeight: 1.3 }}>
+                  {item.label}
+                </p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                  {item.sub}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Recent Scans */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">Recent Scans</h3>
+        {/* ── More services row ── */}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {[
+            { icon: TestTube, label: 'Prescriptions', action: 'prescriptions', color: '#FCA311' },
+            { icon: Activity, label: 'Appointments', action: 'appointments', color: '#0EA5E9' },
+            { icon: Heart, label: 'My Alerts', action: 'alerts', color: '#F43F5E' },
+          ].map((item) => (
             <button
-              onClick={() => onNavigate('history')}
-              className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+              key={item.action}
+              onClick={() => onNavigate(item.action)}
+              className="rounded-xl py-3 px-2 flex flex-col items-center transition-all active:scale-95"
+              style={{ background: '#111D33', border: '1px solid rgba(255,255,255,0.06)' }}
             >
-              View All
+              <item.icon className="w-5 h-5 mb-1.5" style={{ color: item.color }} />
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Recent Scans ── */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', fontFamily: "'Space Grotesk', sans-serif" }}>
+              Recent Scans
+            </p>
+            <button onClick={() => onNavigate('history')}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#14A085' }}>View all</span>
             </button>
           </div>
 
-          <div className="space-y-2">
-            {recentScans.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-                <Camera className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">No scans yet</p>
-                <p className="text-xs text-gray-500 mt-1">Start by scanning a medication</p>
-              </div>
-            ) : (
-              recentScans.slice(0, 3).map((scan) => (
+          {recentScans.length === 0 ? (
+            <div className="rounded-2xl p-6 text-center" style={{
+              background: '#111D33', border: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              <Pill className="w-8 h-8 mx-auto mb-2" style={{ color: 'rgba(255,255,255,0.2)' }} />
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>No scans yet</p>
+              <button
+                onClick={() => onNavigate('scanner')}
+                className="mt-3 px-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                style={{ background: 'rgba(13,115,119,0.2)', color: '#14A085', border: '1px solid rgba(13,115,119,0.3)' }}
+              >
+                Scan your first medicine
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentScans.map((scan) => (
                 <button
                   key={scan.id}
                   onClick={() => onNavigate('history-detail', { scan })}
-                  className="w-full bg-white border border-gray-200 hover:border-gray-300 rounded-lg p-3 flex items-center space-x-3 shadow-sm hover:shadow transition-all active:scale-[0.99]"
+                  className="w-full rounded-xl p-3.5 flex items-center space-x-3 transition-all active:scale-[0.98]"
+                  style={{ background: '#111D33', border: '1px solid rgba(255,255,255,0.06)' }}
                 >
-                  <div className="flex-shrink-0">{getResultIcon(scan.result)}</div>
-                  <div className="flex-1 text-left min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">{scan.name}</h4>
-                    <p className="text-xs text-gray-500">{scan.time}</p>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center" style={{
+                    background: `${resultColor(scan.result)}20`,
+                  }}>
+                    <CheckCircle2 className="w-4 h-4" style={{ color: resultColor(scan.result) }} />
                   </div>
-                  {scan.hasAlert && (
-                    <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-medium">
-                      Alert
-                    </span>
-                  )}
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium border ${getResultBadge(scan.result)}`}>
-                    {scan.confidence}%
+                  <div className="flex-1 text-left min-w-0">
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#FFFFFF' }} className="truncate">
+                      {scan.medication_name}
+                    </p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                      {new Date(scan.scanned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </p>
+                  </div>
+                  <span
+                    className="px-2 py-0.5 rounded-md text-xs font-semibold flex-shrink-0"
+                    style={{
+                      background: `${resultColor(scan.result)}20`,
+                      color: resultColor(scan.result),
+                    }}
+                  >
+                    {resultLabel(scan.result)}
                   </span>
                 </button>
-              ))
-            )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Trust footer ── */}
+        <div className="mt-8 mb-4 rounded-2xl p-4 flex items-start space-x-3" style={{
+          background: 'rgba(13,115,119,0.08)',
+          border: '1px solid rgba(13,115,119,0.2)',
+        }}>
+          <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#14A085' }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#14A085', marginBottom: 2 }}>
+              Free to use, always private
+            </p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+              Your health data is encrypted and only accessible by you.
+            </p>
           </div>
         </div>
 
-        {/* Info Banner */}
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
-          <div className="flex items-start space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-medium text-teal-900 mb-0.5">Free to scan anytime</p>
-              <p className="text-xs text-teal-700">
-                Your verifications help detect counterfeit medications
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

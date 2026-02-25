@@ -1,7 +1,7 @@
 // components/flows/HomepageFlow.jsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Shield, Camera, FileText, Bell, Menu, ChevronRight, CheckCircle2, AlertTriangle, AlertCircle, MessageCircle } from 'lucide-react';
+import { Shield, Camera, FileText, Bell, Menu, ChevronRight, CheckCircle2, AlertTriangle, AlertCircle, MessageCircle, MapPin } from 'lucide-react';
 import { supabase, getCurrentUser } from '../../lib/supabase';
 
 const HomepageFlow = ({ onNavigate }) => {

@@ -275,7 +275,11 @@ export default function TriageFlow({ navigateTo, user }) {
         timestamp: new Date().toISOString(),
       }]);
 
-      if (data.result) {
+      // Only surface a triage result after at least 4 user messages.
+      // This prevents the booking panel appearing after a single exchange
+      // regardless of what the model decides to emit.
+      const userMsgCount = nextMsgs.filter(m => m.role === 'user').length;
+      if (data.result && userMsgCount >= 4) {
         setResult(data.result);
       }
 

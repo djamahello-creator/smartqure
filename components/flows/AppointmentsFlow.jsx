@@ -43,8 +43,8 @@ const AppointmentsFlow = ({ onNavigate }) => {
           paid,
           video_room_url,
           created_at,
-          services_catalogue!fk_appointments_service ( name, icon, category ),
-          service_locations!fk_appointments_location ( name, address, location_type ),
+          services_catalogue!appointments_service_id_fkey ( name, icon, category ),
+          service_locations!appointments_location_id_fkey ( name, address, location_type ),
           clinician_profiles!appointments_clinician_id_fkey ( full_name )
         `)
         .eq('user_id', user.id)

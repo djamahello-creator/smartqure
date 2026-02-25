@@ -29,7 +29,8 @@ import ReportFlow         from './ReportFlow';
 import AlertsFlow         from './AlertsFlow';
 
 // ── AI Care Navigator (Triage) ────────────────────────────────────────────────
-import TriageFlow         from './TriageFlow';
+import TriageFlow              from './TriageFlow';
+import DrugInteractionFlow     from './DrugInteractionFlow';
 
 // ── Pharmacies ────────────────────────────────────────────────────────────────
 import PharmaciesFlow     from './PharmaciesFlow';
@@ -95,6 +96,10 @@ const SmartQureApp = () => {
       case 'triage':
         return <TriageFlow onNavigate={navigateTo} navigateTo={navigateTo} user={currentUser} />;
 
+      // ── Drug Interaction Checker ──────────────────────────────────────────────
+      case 'drug-interaction':
+        return <DrugInteractionFlow onNavigate={navigateTo} />;
+
       // ── RxQure — Verification flows ──────────────────────────────────────────
       case 'scanner':
         return <ScannerFlow onNavigate={navigateTo} />;
@@ -155,6 +160,7 @@ const SmartQureApp = () => {
   const screensWithBottomNav = [
     'homepage', 'appointments', 'history', 'history-detail',
     'alerts', 'profile', 'prescriptions', 'health-docs',
+    'triage', 'drug-interaction',
     'result-verified', 'result-caution', 'result-fake',
     'result-high-risk', 'result-unknown',
   ];

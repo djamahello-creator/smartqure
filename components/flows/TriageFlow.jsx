@@ -354,6 +354,16 @@ export default function TriageFlow({ navigateTo, user }) {
         justifyContent: 'space-between', gap: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => navigateTo('homepage')}
+            style={{
+              width: 34, height: 34, borderRadius: 10, background: 'transparent',
+              border: `1px solid ${C.border}`, color: C.textSub, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, flexShrink: 0,
+            }}
+            aria-label="Back to home"
+          >←</button>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
             background: `linear-gradient(135deg, ${C.accent}40, ${C.accent}10)`,

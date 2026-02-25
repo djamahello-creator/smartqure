@@ -155,6 +155,13 @@ const BookingFlow = ({ onNavigate }) => {
         </div>
       </div>
       <div className="max-w-md mx-auto px-5 py-6">
+        {/* Demo data notice */}
+        <div className="mb-4 flex items-start gap-2 rounded-xl px-4 py-3" style={{ background: 'rgba(252,163,17,0.08)', border: '1px solid rgba(252,163,17,0.2)' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#FCA311' }} />
+          <p className="text-xs" style={{ color: '#FCA311' }}>
+            <span className="font-semibold">Demo data</span> — services and locations are sample entries while we connect your Supabase catalogue tables.
+          </p>
+        </div>
         <p className="text-gray-500 mb-5">Choose the services you need</p>
         <div className="space-y-3">
           {services.map(srv => {

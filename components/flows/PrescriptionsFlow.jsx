@@ -100,7 +100,7 @@ const PrescriptionsFlow = ({ onNavigate }) => {
             <div className="text-xs text-blue-100">Add prescription photo</div>
           </button>
           <button
-            onClick={() => onNavigate('manual-entry')}
+            onClick={() => onNavigate('drug-interaction')}
             className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg hover:shadow-xl transition-shadow active:scale-[0.98]"
           >
             <Search className="w-8 h-8 mb-2" />

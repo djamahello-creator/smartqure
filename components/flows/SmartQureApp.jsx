@@ -3,32 +3,32 @@
 import React, { useState } from 'react';
 
 // Core flows
-import WelcomeFlow        from './components/flows/WelcomeFlow';
-import AuthFlow           from './components/flows/AuthFlow';
-import HomepageFlow       from './components/flows/HomepageFlow';
+import WelcomeFlow        from './WelcomeFlow';
+import AuthFlow           from './AuthFlow';
+import HomepageFlow       from './HomepageFlow';
 
 // RxQure — Medicine verification
-import ScannerFlow        from './components/flows/ScannerFlow';
-import ManualEntryFlow    from './components/flows/ManualEntryFlow';
-import ResultFlow         from './components/flows/ResultFlow';
-import HistoryFlow        from './components/flows/HistoryFlow';
-import HistoryDetailFlow  from './components/flows/HistoryDetailFlow';
-import ReportFlow         from './components/flows/ReportFlow';
-import AlertsFlow         from './components/flows/AlertsFlow';
+import ScannerFlow        from './ScannerFlow';
+import ManualEntryFlow    from './ManualEntryFlow';
+import ResultFlow         from './ResultFlow';
+import HistoryFlow        from './HistoryFlow';
+import HistoryDetailFlow  from './HistoryDetailFlow';
+import ReportFlow         from './ReportFlow';
+import AlertsFlow         from './AlertsFlow';
 
 // SmartQure Care Navigator (AI Triage)
-import TriageFlow         from './components/flows/TriageFlow';
+import TriageFlow         from './TriageFlow';
 
 // Pharmacies
-import PharmaciesFlow     from './components/flows/PharmaciesFlow';
+import PharmaciesFlow     from './PharmaciesFlow';
 
 // Identity & Profile
-import IDVerificationFlow from './components/flows/IDVerificationFlow';
-import IDResultFlow       from './components/flows/IDResultFlow';
-import ProfileFlow        from './components/flows/ProfileFlow';
+import IDVerificationFlow from './IDVerificationFlow';
+import IDResultFlow       from './IDResultFlow';
+import ProfileFlow        from './ProfileFlow';
 
 // Shell
-import BottomNav          from './components/BottomNav';
+import BottomNav          from '../BottomNav';
 
 const SmartQureApp = () => {
   const [currentScreen, setCurrentScreen] = useState('welcome');

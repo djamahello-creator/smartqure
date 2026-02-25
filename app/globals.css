@@ -1,6 +1,3 @@
-/* Tailwind v4 — activates PostCSS compilation pipeline */
-@import "tailwindcss";
-
 * {
   margin: 0;
   padding: 0;

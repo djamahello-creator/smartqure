@@ -52,8 +52,31 @@ const ProfileFlow = ({ onNavigate }) => {
         phone: profile?.phone || '',
         verified: profile?.verified || false,
         verifiedAt: profile?.verified_at,
+        // Clinical fields (new from 06_launch_schema_reconciliation.sql)
+        date_of_birth: profile?.date_of_birth || '',
+        gender: profile?.gender || '',
+        blood_type: profile?.blood_type || '',
+        height_cm: profile?.height_cm || '',
+        weight_kg: profile?.weight_kg || '',
+        emergency_contact_name:  profile?.emergency_contact_name  || '',
+        emergency_contact_phone: profile?.emergency_contact_phone || '',
+        insurance_provider: profile?.insurance_provider || '',
+        insurance_number:   profile?.insurance_number   || '',
       });
-      setEditForm({ firstName, lastName, phone: profile?.phone || '' });
+      setEditForm({
+        firstName,
+        lastName,
+        phone: profile?.phone || '',
+        date_of_birth: profile?.date_of_birth || '',
+        gender: profile?.gender || '',
+        blood_type: profile?.blood_type || '',
+        height_cm: profile?.height_cm ? String(profile.height_cm) : '',
+        weight_kg: profile?.weight_kg ? String(profile.weight_kg) : '',
+        emergency_contact_name:  profile?.emergency_contact_name  || '',
+        emergency_contact_phone: profile?.emergency_contact_phone || '',
+        insurance_provider: profile?.insurance_provider || '',
+        insurance_number:   profile?.insurance_number   || '',
+      });
 
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -66,13 +89,25 @@ const ProfileFlow = ({ onNavigate }) => {
     setSaving(true);
     setSaveMsg(null);
     try {
+      const updates = {
+        first_name: editForm.firstName.trim(),
+        last_name:  editForm.lastName.trim(),
+        phone:      editForm.phone.trim(),
+        // Clinical fields
+        date_of_birth:           editForm.date_of_birth           || null,
+        gender:                  editForm.gender                  || null,
+        blood_type:              editForm.blood_type              || null,
+        height_cm:               editForm.height_cm ? parseFloat(editForm.height_cm) : null,
+        weight_kg:               editForm.weight_kg ? parseFloat(editForm.weight_kg) : null,
+        emergency_contact_name:  editForm.emergency_contact_name.trim()  || null,
+        emergency_contact_phone: editForm.emergency_contact_phone.trim() || null,
+        insurance_provider:      editForm.insurance_provider.trim()      || null,
+        insurance_number:        editForm.insurance_number.trim()        || null,
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          first_name: editForm.firstName.trim(),
-          last_name:  editForm.lastName.trim(),
-          phone:      editForm.phone.trim(),
-        })
+        .update(updates)
         .eq('id', userId);
 
       if (error) throw error;
@@ -83,6 +118,15 @@ const ProfileFlow = ({ onNavigate }) => {
         name: editForm.firstName || fullName,
         fullName,
         phone: editForm.phone,
+        date_of_birth: editForm.date_of_birth,
+        gender: editForm.gender,
+        blood_type: editForm.blood_type,
+        height_cm: editForm.height_cm,
+        weight_kg: editForm.weight_kg,
+        emergency_contact_name:  editForm.emergency_contact_name,
+        emergency_contact_phone: editForm.emergency_contact_phone,
+        insurance_provider: editForm.insurance_provider,
+        insurance_number:   editForm.insurance_number,
       }));
       setSaveMsg({ ok: true, text: 'Profile updated.' });
       setEditMode(false);
@@ -287,6 +331,61 @@ const ProfileFlow = ({ onNavigate }) => {
                   type="tel"
                 />
               </div>
+              {/* Clinical fields */}
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 0' }} />
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#14A085', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Medical Info</p>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Date of Birth</label>
+                <input type="date" style={inputStyle} value={editForm.date_of_birth || ''} onChange={e => setEditForm({ ...editForm, date_of_birth: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Gender</label>
+                <select style={inputStyle} value={editForm.gender || ''} onChange={e => setEditForm({ ...editForm, gender: e.target.value })}>
+                  <option value="">Select…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Blood Type</label>
+                <select style={inputStyle} value={editForm.blood_type || ''} onChange={e => setEditForm({ ...editForm, blood_type: e.target.value })}>
+                  <option value="">Unknown</option>
+                  {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(bt => <option key={bt} value={bt}>{bt}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Height (cm)</label>
+                  <input type="number" step="0.1" placeholder="165" style={inputStyle} value={editForm.height_cm || ''} onChange={e => setEditForm({ ...editForm, height_cm: e.target.value })} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Weight (kg)</label>
+                  <input type="number" step="0.1" placeholder="70" style={inputStyle} value={editForm.weight_kg || ''} onChange={e => setEditForm({ ...editForm, weight_kg: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 0' }} />
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#14A085', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Emergency Contact</p>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Name</label>
+                <input type="text" placeholder="Contact name" style={inputStyle} value={editForm.emergency_contact_name || ''} onChange={e => setEditForm({ ...editForm, emergency_contact_name: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Phone</label>
+                <input type="tel" placeholder="+252 61 000 0000" style={inputStyle} value={editForm.emergency_contact_phone || ''} onChange={e => setEditForm({ ...editForm, emergency_contact_phone: e.target.value })} />
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '8px 0' }} />
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#14A085', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>Insurance</p>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Provider</label>
+                <input type="text" placeholder="e.g. Jubilee Insurance" style={inputStyle} value={editForm.insurance_provider || ''} onChange={e => setEditForm({ ...editForm, insurance_provider: e.target.value })} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 5 }}>Member / Policy Number</label>
+                <input type="text" placeholder="Policy number" style={inputStyle} value={editForm.insurance_number || ''} onChange={e => setEditForm({ ...editForm, insurance_number: e.target.value })} />
+              </div>
+
               <div className="flex space-x-2 pt-1">
                 <button
                   onClick={handleSaveProfile}
@@ -425,6 +524,51 @@ const ProfileFlow = ({ onNavigate }) => {
             <ChevronRight className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
           </button>
         </div>
+
+        {/* ── Medical Info section ── */}
+        <div style={card}>
+          <div style={sectionHead}>Medical Info</div>
+
+          {[
+            { label: 'Date of Birth', value: currentUser?.date_of_birth ? new Date(currentUser.date_of_birth).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null },
+            { label: 'Gender',        value: currentUser?.gender        ? currentUser.gender.replace(/_/g, ' ') : null },
+            { label: 'Blood Type',    value: currentUser?.blood_type    || null },
+            { label: 'Height',        value: currentUser?.height_cm     ? `${currentUser.height_cm} cm` : null },
+            { label: 'Weight',        value: currentUser?.weight_kg     ? `${currentUser.weight_kg} kg` : null },
+          ].map(({ label, value }, idx, arr) => (
+            <div key={label} style={{ ...rowBase, borderBottom: idx < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'default' }}>
+              <div>
+                <p style={subStyle}>{label}</p>
+                <p style={{ ...labelStyle, fontSize: 13 }}>{value || <span style={{ color: 'rgba(255,255,255,0.25)', fontStyle: 'italic', fontSize: 12 }}>Not set</span>}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Emergency Contact ── */}
+        {(currentUser?.emergency_contact_name || currentUser?.insurance_provider) && (
+          <div style={card}>
+            <div style={sectionHead}>Emergency & Insurance</div>
+            {currentUser?.emergency_contact_name && (
+              <div style={{ ...rowBase, cursor: 'default' }}>
+                <div>
+                  <p style={subStyle}>Emergency Contact</p>
+                  <p style={{ ...labelStyle, fontSize: 13 }}>{currentUser.emergency_contact_name}</p>
+                  {currentUser?.emergency_contact_phone && <p style={{ ...subStyle, marginTop: 2 }}>{currentUser.emergency_contact_phone}</p>}
+                </div>
+              </div>
+            )}
+            {currentUser?.insurance_provider && (
+              <div style={{ ...rowBase, borderBottom: 'none', cursor: 'default' }}>
+                <div>
+                  <p style={subStyle}>Insurance</p>
+                  <p style={{ ...labelStyle, fontSize: 13 }}>{currentUser.insurance_provider}</p>
+                  {currentUser?.insurance_number && <p style={{ ...subStyle, marginTop: 2 }}>#{currentUser.insurance_number}</p>}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Verification section ── */}
         {!currentUser?.verified && (

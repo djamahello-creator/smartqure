@@ -1,22 +1,23 @@
 // components/flows/HealthDocsFlow.jsx
 // Wired to Supabase — requires health_conditions, allergies, patient_medications,
-// patient_documents tables. Run create_missing_tables.sql first.
+// patient_documents, vitals_log tables (06_launch_schema_reconciliation.sql).
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Plus, X, Edit2, Trash2, Upload, FileText, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronRight, Plus, X, Trash2, Upload, FileText, Eye, Loader2, AlertCircle, Activity, Heart, Thermometer, Droplets } from 'lucide-react';
 import { supabase, getCurrentUser } from '../../lib/supabase';
 
 const HealthDocsFlow = ({ onNavigate }) => {
-  const [screen, setScreen]         = useState('health');
+  const [screen, setScreen]         = useState('health');  // 'health' | 'vitals' | 'docs'
   const [userId, setUserId]         = useState(null);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState(null);
-  const [showAdd, setShowAdd]       = useState(null); // 'condition' | 'allergy' | 'medication'
+  const [showAdd, setShowAdd]       = useState(null); // 'condition'|'allergy'|'medication'|'vitals'
 
   const [conditions, setConditions]     = useState([]);
   const [allergies, setAllergies]       = useState([]);
   const [medications, setMedications]   = useState([]);
   const [documents, setDocuments]       = useState([]);
+  const [vitals, setVitals]             = useState([]);
 
   // Add form state
   const [addForm, setAddForm] = useState({});
@@ -31,11 +32,12 @@ const HealthDocsFlow = ({ onNavigate }) => {
       if (!user) { onNavigate('welcome'); return; }
       setUserId(user.id);
 
-      const [cRes, aRes, mRes, dRes] = await Promise.all([
+      const [cRes, aRes, mRes, dRes, vRes] = await Promise.all([
         supabase.from('health_conditions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('allergies').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('patient_medications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('patient_documents').select('*').eq('user_id', user.id).order('uploaded_at', { ascending: false }),
+        supabase.from('vitals_log').select('*').eq('user_id', user.id).order('recorded_at', { ascending: false }).limit(20),
       ]);
 
       // Surface first error if any
@@ -46,12 +48,10 @@ const HealthDocsFlow = ({ onNavigate }) => {
       setAllergies(aRes.data || []);
       setMedications(mRes.data || []);
       setDocuments(dRes.data || []);
+      setVitals(vRes.data || []);
     } catch (err) {
       console.error('Health docs fetch error:', err);
-      setError(err.message?.includes('does not exist')
-        ? 'Health record tables have not been created yet. Run create_missing_tables.sql in your Supabase SQL Editor.'
-        : 'Could not load health records. Please try again.'
-      );
+      setError('Could not load health records. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +83,28 @@ const HealthDocsFlow = ({ onNavigate }) => {
           .select().single();
         if (error) throw error;
         setMedications(prev => [data, ...prev]);
+      } else if (showAdd === 'vitals') {
+        const vitalsPayload = {
+          user_id: userId,
+          recorded_at: new Date().toISOString(),
+          source: 'manual',
+          ...(addForm.bp_systolic  ? { bp_systolic:  parseInt(addForm.bp_systolic)  } : {}),
+          ...(addForm.bp_diastolic ? { bp_diastolic: parseInt(addForm.bp_diastolic) } : {}),
+          ...(addForm.pulse        ? { pulse:        parseInt(addForm.pulse)        } : {}),
+          ...(addForm.spo2         ? { spo2:         parseFloat(addForm.spo2)       } : {}),
+          ...(addForm.temp_c       ? { temp_c:       parseFloat(addForm.temp_c)     } : {}),
+          ...(addForm.weight_kg    ? { weight_kg:    parseFloat(addForm.weight_kg)  } : {}),
+          ...(addForm.blood_glucose_mmol ? { blood_glucose_mmol: parseFloat(addForm.blood_glucose_mmol) } : {}),
+          ...(addForm.pain_score   ? { pain_score:   parseInt(addForm.pain_score)   } : {}),
+          ...(addForm.mood_score   ? { mood_score:   parseInt(addForm.mood_score)   } : {}),
+          ...(addForm.notes        ? { notes:        addForm.notes                  } : {}),
+        };
+        const { data, error } = await supabase
+          .from('vitals_log')
+          .insert(vitalsPayload)
+          .select().single();
+        if (error) throw error;
+        setVitals(prev => [data, ...prev]);
       }
       setShowAdd(null);
       setAddForm({});
@@ -126,17 +148,36 @@ const HealthDocsFlow = ({ onNavigate }) => {
     </div>
   ) : null;
 
-  // ─── Health History ───────────────────────────────────────────────────────
-  if (screen === 'health') return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-md mx-auto px-5 py-4 flex items-center gap-3">
+  // ─── Shared Tab Header ────────────────────────────────────────────────────
+  const TabHeader = ({ title }) => (
+    <div className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="max-w-md mx-auto px-5 py-4">
+        <div className="flex items-center gap-3 mb-3">
           <button onClick={() => onNavigate('homepage')} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
             <ChevronRight className="w-5 h-5 rotate-180" />
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Health History</h1>
+          <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+        </div>
+        <div className="flex gap-1">
+          {[
+            { id: 'health', label: 'History' },
+            { id: 'vitals', label: 'Vitals' },
+            { id: 'docs',   label: 'Documents' },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setScreen(tab.id)}
+              className={`flex-1 py-2 rounded-lg font-medium text-sm transition-colors ${screen === tab.id ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:bg-gray-100'}`}>
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
+    </div>
+  );
+
+  // ─── Health History ───────────────────────────────────────────────────────
+  if (screen === 'health') return (
+    <div className="min-h-screen bg-gray-50">
+      <TabHeader title="Health Records" />
 
       <div className="max-w-md mx-auto px-5 py-6 space-y-6">
         <ErrorBanner />
@@ -225,9 +266,14 @@ const HealthDocsFlow = ({ onNavigate }) => {
           }
         </section>
 
-        <button onClick={() => setScreen('docs')} className="w-full py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
-          View Documents
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => setScreen('vitals')} className="flex-1 py-4 bg-white border-2 border-blue-600 text-blue-600 rounded-xl font-semibold hover:bg-blue-50">
+            📊 Vitals
+          </button>
+          <button onClick={() => setScreen('docs')} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
+            📁 Documents
+          </button>
+        </div>
       </div>
 
       {/* Add modal */}
@@ -236,7 +282,7 @@ const HealthDocsFlow = ({ onNavigate }) => {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">
-                {showAdd === 'condition' ? 'Add Condition' : showAdd === 'allergy' ? 'Add Allergy' : 'Add Medication'}
+                {showAdd === 'condition' ? 'Add Condition' : showAdd === 'allergy' ? 'Add Allergy' : showAdd === 'medication' ? 'Add Medication' : 'Log Vitals'}
               </h3>
               <button onClick={() => setShowAdd(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>
             </div>
@@ -267,6 +313,32 @@ const HealthDocsFlow = ({ onNavigate }) => {
                 <input type="text" placeholder="Frequency (e.g. Twice daily)" value={addForm.frequency || ''} onChange={e => setAddForm(p => ({ ...p, frequency: e.target.value }))}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </>}
+              {showAdd === 'vitals' && <>
+                <p className="text-xs text-gray-500 mb-1">Fill in any values you have — all fields optional.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" placeholder="BP Systolic (mmHg)" value={addForm.bp_systolic || ''} onChange={e => setAddForm(p => ({ ...p, bp_systolic: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="BP Diastolic (mmHg)" value={addForm.bp_diastolic || ''} onChange={e => setAddForm(p => ({ ...p, bp_diastolic: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Pulse (bpm)" value={addForm.pulse || ''} onChange={e => setAddForm(p => ({ ...p, pulse: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="SpO₂ (%)" step="0.1" value={addForm.spo2 || ''} onChange={e => setAddForm(p => ({ ...p, spo2: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Temp (°C)" step="0.1" value={addForm.temp_c || ''} onChange={e => setAddForm(p => ({ ...p, temp_c: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Weight (kg)" step="0.1" value={addForm.weight_kg || ''} onChange={e => setAddForm(p => ({ ...p, weight_kg: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Glucose (mmol/L)" step="0.1" value={addForm.blood_glucose_mmol || ''} onChange={e => setAddForm(p => ({ ...p, blood_glucose_mmol: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                    <span className="text-xs text-gray-500">Pain 0–10:</span>
+                    <input type="number" min="0" max="10" placeholder="5" value={addForm.pain_score || ''} onChange={e => setAddForm(p => ({ ...p, pain_score: e.target.value }))}
+                      className="w-full text-sm focus:outline-none bg-transparent" />
+                  </div>
+                </div>
+                <textarea placeholder="Notes (optional)" value={addForm.notes || ''} onChange={e => setAddForm(p => ({ ...p, notes: e.target.value }))} rows={2}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+              </>}
               <button onClick={handleAdd} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />} Save
               </button>
@@ -277,17 +349,133 @@ const HealthDocsFlow = ({ onNavigate }) => {
     </div>
   );
 
+  // ─── Vitals ───────────────────────────────────────────────────────────────
+  if (screen === 'vitals') {
+    const latest = vitals[0] || null;
+
+    const VitalChip = ({ label, value, unit, color = '#0D7377' }) => value ? (
+      <div style={{ background: 'rgba(13,115,119,0.08)', border: '1px solid rgba(13,115,119,0.15)', borderRadius: 12, padding: '8px 14px', minWidth: 80 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a2e' }}>{value}<span style={{ fontSize: 11, fontWeight: 400, color: '#6b7280' }}> {unit}</span></div>
+      </div>
+    ) : null;
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <TabHeader title="Vitals" />
+        <div className="max-w-md mx-auto px-5 py-6">
+          <ErrorBanner />
+
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-gray-900">Vitals Log</h2>
+            <button onClick={() => { setShowAdd('vitals'); setAddForm({}); }}
+              className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700">
+              <Plus className="w-5 h-5 text-white" />
+            </button>
+          </div>
+
+          {/* Latest reading summary */}
+          {latest && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+              <div className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wide">Latest Reading</div>
+              <div className="text-xs text-gray-400 mb-3">
+                {new Date(latest.recorded_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(latest.bp_systolic && latest.bp_diastolic) &&
+                  <VitalChip label="Blood Pressure" value={`${latest.bp_systolic}/${latest.bp_diastolic}`} unit="mmHg" />}
+                {latest.pulse    && <VitalChip label="Pulse"     value={latest.pulse}   unit="bpm" />}
+                {latest.spo2     && <VitalChip label="SpO₂"      value={latest.spo2}    unit="%" />}
+                {latest.temp_c   && <VitalChip label="Temp"      value={latest.temp_c}  unit="°C" />}
+                {latest.weight_kg && <VitalChip label="Weight"   value={latest.weight_kg} unit="kg" />}
+                {latest.blood_glucose_mmol && <VitalChip label="Glucose" value={latest.blood_glucose_mmol} unit="mmol/L" color="#F59E0B" />}
+                {latest.pain_score != null && <VitalChip label="Pain"   value={`${latest.pain_score}/10`} unit="" color={latest.pain_score >= 7 ? '#EF4444' : '#0D7377'} />}
+              </div>
+            </div>
+          )}
+
+          {/* Vitals history list */}
+          {vitals.length === 0 ? (
+            <div className="text-center py-12">
+              <Activity className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="font-semibold text-gray-600 mb-1">No vitals recorded yet</p>
+              <p className="text-sm text-gray-400">Tap + to log your first reading</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {vitals.map(v => (
+                <div key={v.id} className="bg-white rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-gray-400">
+                      {new Date(v.recorded_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 bg-gray-100 rounded-full text-gray-500 capitalize">{v.source}</span>
+                  </div>
+                  <div className="text-sm text-gray-700 flex flex-wrap gap-x-4 gap-y-1">
+                    {(v.bp_systolic && v.bp_diastolic) && <span>BP: <strong>{v.bp_systolic}/{v.bp_diastolic}</strong> mmHg</span>}
+                    {v.pulse     && <span>Pulse: <strong>{v.pulse}</strong> bpm</span>}
+                    {v.spo2      && <span>SpO₂: <strong>{v.spo2}</strong>%</span>}
+                    {v.temp_c    && <span>Temp: <strong>{v.temp_c}</strong>°C</span>}
+                    {v.weight_kg && <span>Weight: <strong>{v.weight_kg}</strong> kg</span>}
+                    {v.blood_glucose_mmol && <span>Glucose: <strong>{v.blood_glucose_mmol}</strong> mmol/L</span>}
+                    {v.pain_score != null && <span>Pain: <strong>{v.pain_score}/10</strong></span>}
+                  </div>
+                  {v.notes && <p className="text-xs text-gray-400 mt-1">{v.notes}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Vitals modal */}
+        {showAdd === 'vitals' && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-5">
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Log Vitals</h3>
+                <button onClick={() => setShowAdd(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"><X className="w-5 h-5" /></button>
+              </div>
+              <div className="space-y-3">
+                <p className="text-xs text-gray-500">Fill in any values you have — all fields optional.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" placeholder="BP Systolic (mmHg)" value={addForm.bp_systolic || ''} onChange={e => setAddForm(p => ({ ...p, bp_systolic: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="BP Diastolic (mmHg)" value={addForm.bp_diastolic || ''} onChange={e => setAddForm(p => ({ ...p, bp_diastolic: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Pulse (bpm)" value={addForm.pulse || ''} onChange={e => setAddForm(p => ({ ...p, pulse: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="SpO₂ (%)" step="0.1" value={addForm.spo2 || ''} onChange={e => setAddForm(p => ({ ...p, spo2: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Temp (°C)" step="0.1" value={addForm.temp_c || ''} onChange={e => setAddForm(p => ({ ...p, temp_c: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Weight (kg)" step="0.1" value={addForm.weight_kg || ''} onChange={e => setAddForm(p => ({ ...p, weight_kg: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="number" placeholder="Glucose (mmol/L)" step="0.1" value={addForm.blood_glucose_mmol || ''} onChange={e => setAddForm(p => ({ ...p, blood_glucose_mmol: e.target.value }))}
+                    className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl">
+                    <span className="text-xs text-gray-500 whitespace-nowrap">Pain (0–10):</span>
+                    <input type="number" min="0" max="10" placeholder="0" value={addForm.pain_score || ''} onChange={e => setAddForm(p => ({ ...p, pain_score: e.target.value }))}
+                      className="w-full text-sm focus:outline-none bg-transparent" />
+                  </div>
+                </div>
+                <textarea placeholder="Notes (optional)" value={addForm.notes || ''} onChange={e => setAddForm(p => ({ ...p, notes: e.target.value }))} rows={2}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                <button onClick={handleAdd} disabled={saving}
+                  className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2">
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />} Save Reading
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // ─── Documents ────────────────────────────────────────────────────────────
   if (screen === 'docs') return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-md mx-auto px-5 py-4 flex items-center gap-3">
-          <button onClick={() => setScreen('health')} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100">
-            <ChevronRight className="w-5 h-5 rotate-180" />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Documents</h1>
-        </div>
-      </div>
+      <TabHeader title="Documents" />
 
       <div className="max-w-md mx-auto px-5 py-6">
         <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100">
@@ -333,6 +521,7 @@ const HealthDocsFlow = ({ onNavigate }) => {
         <div className="mt-4 text-center">
           <button onClick={() => setScreen('health')} className="text-blue-600 font-semibold text-sm">Back to Health History</button>
         </div>
+        <div style={{ height: 72 }} />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // components/flows/AppointmentsFlow.jsx
-// Wired to Supabase — requires appointments + appointment_services tables.
-// Run create_missing_tables.sql first if you see a "relation does not exist" error.
+// Wired to Supabase — uses reconciled appointments schema (06_launch_schema_reconciliation.sql).
+// Joins services_catalogue, service_locations, clinician_profiles for display names.
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, User, ChevronRight, X, AlertCircle, Edit2, Trash2, Loader2, Plus } from 'lucide-react';
@@ -31,34 +31,27 @@ const AppointmentsFlow = ({ onNavigate }) => {
           id,
           appointment_type,
           status,
-          appointment_date,
-          appointment_time,
+          scheduled_at,
           duration_minutes,
-          location_name,
-          location_address,
-          location_type,
-          provider_name,
-          reason,
+          chief_complaint,
           notes,
           payment_method,
-          amount,
+          fee_usd,
+          paid,
+          video_room_url,
           created_at,
-          appointment_services (
-            service_name,
-            service_category
-          )
+          services_catalogue ( name, icon, category ),
+          service_locations ( name, address, location_type ),
+          clinician_profiles ( full_name )
         `)
         .eq('user_id', user.id)
-        .order('appointment_date', { ascending: true });
+        .order('scheduled_at', { ascending: true });
 
       if (fetchError) throw fetchError;
       setAppointments(data || []);
     } catch (err) {
       console.error('Appointments fetch error:', err);
-      setError(err.message?.includes('does not exist')
-        ? 'The appointments table has not been created yet. Run create_missing_tables.sql in your Supabase SQL Editor.'
-        : 'Could not load appointments. Please try again.'
-      );
+      setError('Could not load appointments. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +63,7 @@ const AppointmentsFlow = ({ onNavigate }) => {
     try {
       const { error: updateError } = await supabase
         .from('appointments')
-        .update({ status: 'cancelled', cancel_reason: cancelReason, updated_at: new Date().toISOString() })
+        .update({ status: 'cancelled', cancellation_reason: cancelReason, updated_at: new Date().toISOString() })
         .eq('id', selected.id);
 
       if (updateError) throw updateError;
@@ -95,43 +88,84 @@ const AppointmentsFlow = ({ onNavigate }) => {
     const now = new Date();
     if (filterTab === 'upcoming')
       return appointments.filter(a =>
-        (a.status === 'scheduled' || a.status === 'confirmed') &&
-        new Date(a.appointment_date) >= now
+        (a.status === 'pending' || a.status === 'confirmed') &&
+        new Date(a.scheduled_at) >= now
       );
     if (filterTab === 'past')
       return appointments.filter(a =>
         a.status === 'completed' || a.status === 'cancelled' ||
-        new Date(a.appointment_date) < now
+        new Date(a.scheduled_at) < now
       );
     return appointments;
   };
 
   const statusColor = (s) => ({
-    scheduled: 'bg-blue-100 text-blue-700',
+    pending:    'bg-amber-100 text-amber-700',
     confirmed:  'bg-green-100 text-green-700',
     completed:  'bg-gray-100 text-gray-600',
     cancelled:  'bg-red-100 text-red-700',
+    no_show:    'bg-red-100 text-red-700',
+    rescheduled:'bg-blue-100 text-blue-700',
   }[s] || 'bg-gray-100 text-gray-600');
 
-  const typeLabel = (t) => ({
-    lab_visit:       'Lab Visit',
-    gp_consultation: 'GP Consultation',
-    vaccination:     'Vaccination',
-  }[t] || 'Appointment');
+  const statusLabel = (s) => ({
+    pending:     'Pending',
+    confirmed:   'Confirmed',
+    completed:   'Completed',
+    cancelled:   'Cancelled',
+    no_show:     'No Show',
+    in_progress: 'In Progress',
+    rescheduled: 'Rescheduled',
+  }[s] || s);
+
+  // Use joined service name or fall back to appointment_type
+  const getServiceName = (apt) =>
+    apt.services_catalogue?.name || apt.appointment_type || 'Appointment';
+
+  const getServiceIcon = (apt) =>
+    apt.services_catalogue?.icon || '🗓️';
+
+  const getLocationName = (apt) =>
+    apt.service_locations?.name || null;
+
+  const getLocationAddress = (apt) =>
+    apt.service_locations?.address || null;
+
+  const getIsVirtual = (apt) =>
+    apt.service_locations?.location_type === 'virtual' ||
+    apt.appointment_type === 'video' || apt.appointment_type === 'audio';
+
+  const getClinicianName = (apt) =>
+    apt.clinician_profiles?.full_name || null;
 
   const canCancel = (a) => {
-    const hrs = (new Date(a.appointment_date) - new Date()) / 3_600_000;
-    return hrs > 2 && (a.status === 'scheduled' || a.status === 'confirmed');
+    const hrs = (new Date(a.scheduled_at) - new Date()) / 3_600_000;
+    return hrs > 2 && (a.status === 'pending' || a.status === 'confirmed');
   };
 
   const canReschedule = (a) => {
-    const hrs = (new Date(a.appointment_date) - new Date()) / 3_600_000;
-    return hrs > 24 && a.status === 'scheduled';
+    const hrs = (new Date(a.scheduled_at) - new Date()) / 3_600_000;
+    return hrs > 24 && a.status === 'pending';
   };
 
-  const formatDate = (d, t) => {
-    const date = new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    return t ? `${date} at ${t.slice(0, 5)}` : date;
+  const formatScheduledAt = (iso) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
+      ' at ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const formatDateOnly = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatTimeOnly = (iso, durationMins) => {
+    if (!iso) return '';
+    const start = new Date(iso);
+    const end = new Date(start.getTime() + (durationMins || 30) * 60000);
+    const fmt = (d) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    return `${fmt(start)} – ${fmt(end)}`;
   };
 
   // ─── Loading ──────────────────────────────────────────────────────────────
@@ -206,36 +240,34 @@ const AppointmentsFlow = ({ onNavigate }) => {
                 <div key={apt.id} onClick={() => { setSelected(apt); setCurrentView('detail'); }}
                   className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900 mb-1">{typeLabel(apt.appointment_type)}</div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">{getServiceIcon(apt)}</span>
+                        <span className="font-semibold text-gray-900">{getServiceName(apt)}</span>
+                      </div>
                       <div className="text-sm text-gray-500 flex items-center gap-2 mb-1">
                         <Calendar className="w-4 h-4 flex-shrink-0" />
-                        {formatDate(apt.appointment_date, apt.appointment_time)}
+                        {formatScheduledAt(apt.scheduled_at)}
                       </div>
-                      {apt.location_name && (
+                      {getLocationName(apt) && (
                         <div className="text-sm text-gray-500 flex items-center gap-2 mb-1">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />{apt.location_name}
+                          <MapPin className="w-4 h-4 flex-shrink-0" />{getLocationName(apt)}
                         </div>
                       )}
-                      {apt.provider_name && (
+                      {getClinicianName(apt) && (
                         <div className="text-sm text-gray-500 flex items-center gap-2">
-                          <User className="w-4 h-4 flex-shrink-0" />{apt.provider_name}
+                          <User className="w-4 h-4 flex-shrink-0" />{getClinicianName(apt)}
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColor(apt.status)}`}>
-                        {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
+                        {statusLabel(apt.status)}
                       </span>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>
-                  {apt.appointment_services?.length > 0 && (
-                    <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                      {apt.appointment_services.map(s => s.service_name).join(', ')}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -248,6 +280,7 @@ const AppointmentsFlow = ({ onNavigate }) => {
   // ─── DETAIL ───────────────────────────────────────────────────────────────
   if (currentView === 'detail' && selected) {
     const apt = selected;
+    const isVirtual = getIsVirtual(apt);
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white shadow-sm sticky top-0 z-50">
@@ -286,60 +319,66 @@ const AppointmentsFlow = ({ onNavigate }) => {
             </div>
           </div>
 
-          {/* Details */}
+          {/* Service + Details */}
           <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4">
             <h3 className="font-bold text-gray-900">Details</h3>
+
+            {/* Service */}
+            <div className="flex gap-3">
+              <span className="text-2xl">{getServiceIcon(apt)}</span>
+              <div>
+                <div className="text-sm text-gray-500">Service</div>
+                <div className="font-semibold text-gray-900">{getServiceName(apt)}</div>
+                {apt.duration_minutes && <div className="text-sm text-gray-500">{apt.duration_minutes} min</div>}
+              </div>
+            </div>
+
+            {/* Date & Time */}
             <div className="flex gap-3">
               <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
               <div>
                 <div className="text-sm text-gray-500">Date & Time</div>
-                <div className="font-semibold text-gray-900">
-                  {new Date(apt.appointment_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                </div>
-                {apt.appointment_time && (
-                  <div className="text-gray-700">{apt.appointment_time.slice(0,5)} ({apt.duration_minutes} min)</div>
+                <div className="font-semibold text-gray-900">{formatDateOnly(apt.scheduled_at)}</div>
+                {apt.scheduled_at && (
+                  <div className="text-gray-700">{formatTimeOnly(apt.scheduled_at, apt.duration_minutes)}</div>
                 )}
               </div>
             </div>
-            {apt.location_name && (
+
+            {/* Location */}
+            {getLocationName(apt) && (
               <div className="flex gap-3">
                 <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <div className="text-sm text-gray-500">Location</div>
-                  <div className="font-semibold text-gray-900">{apt.location_name}</div>
-                  {apt.location_address && <div className="text-sm text-gray-500">{apt.location_address}</div>}
-                  {apt.location_type === 'virtual' && <div className="text-sm text-blue-600 mt-1">Video call link sent 15 min before</div>}
+                  <div className="font-semibold text-gray-900">{getLocationName(apt)}</div>
+                  {getLocationAddress(apt) && <div className="text-sm text-gray-500">{getLocationAddress(apt)}</div>}
+                  {getIsVirtual(apt) && <div className="text-sm text-blue-600 mt-1">Video call — link sent 15 min before</div>}
                 </div>
               </div>
             )}
-            {apt.provider_name && (
+
+            {/* Clinician */}
+            {getClinicianName(apt) ? (
               <div className="flex gap-3">
                 <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-sm text-gray-500">Provider</div>
-                  <div className="font-semibold text-gray-900">{apt.provider_name}</div>
+                  <div className="text-sm text-gray-500">Clinician</div>
+                  <div className="font-semibold text-gray-900">{getClinicianName(apt)}</div>
                 </div>
+              </div>
+            ) : (
+              <div className="flex gap-3 items-center p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <User className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <p className="text-sm text-amber-800">Clinician will be assigned after confirmation</p>
               </div>
             )}
           </div>
 
-          {/* Services */}
-          {apt.appointment_services?.length > 0 && (
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h3 className="font-bold text-gray-900 mb-3">Services</h3>
-              {apt.appointment_services.map((s, i) => (
-                <div key={i} className="flex items-center justify-between py-2">
-                  <span className="text-gray-900">{s.service_name}</span>
-                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">{s.service_category}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Reason / Notes */}
-          {(apt.reason || apt.notes) && (
+          {(apt.chief_complaint || apt.notes) && (
             <div className="bg-white rounded-2xl p-5 shadow-sm">
-              {apt.reason && <div className="mb-3"><div className="text-sm text-gray-500 mb-1">Reason</div><div className="text-gray-900">{apt.reason}</div></div>}
+              {apt.chief_complaint && <div className="mb-3"><div className="text-sm text-gray-500 mb-1">Reason</div><div className="text-gray-900">{apt.chief_complaint}</div></div>}
               {apt.notes  && <div><div className="text-sm text-gray-500 mb-1">Notes</div><div className="text-gray-900">{apt.notes}</div></div>}
             </div>
           )}
@@ -348,8 +387,8 @@ const AppointmentsFlow = ({ onNavigate }) => {
           <div className="bg-white rounded-2xl p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 mb-3">Payment</h3>
             <div className="flex items-center justify-between">
-              <div><div className="text-sm text-gray-500">Method</div><div className="font-semibold text-gray-900 capitalize">{apt.payment_method}</div></div>
-              <div className="text-right"><div className="text-sm text-gray-500">Amount</div><div className="font-semibold text-gray-900">{apt.amount === 0 ? 'Included' : `$${Number(apt.amount).toFixed(2)}`}</div></div>
+              <div><div className="text-sm text-gray-500">Method</div><div className="font-semibold text-gray-900 capitalize">{apt.payment_method || '—'}</div></div>
+              <div className="text-right"><div className="text-sm text-gray-500">Amount</div><div className="font-semibold text-gray-900">{apt.fee_usd == 0 ? 'Free' : `$${Number(apt.fee_usd || 0).toFixed(2)}`}</div></div>
             </div>
           </div>
 

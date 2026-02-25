@@ -41,11 +41,11 @@ const HomepageFlow = ({ onNavigate }) => {
       // Next upcoming appointment
       const { data: appts } = await supabase
         .from('appointments')
-        .select('*, appointment_services(service_name)')
+        .select('id, scheduled_at, duration_minutes, status, services_catalogue(name, icon), service_locations(name)')
         .eq('user_id', user.id)
-        .in('status', ['scheduled', 'confirmed'])
-        .gte('appointment_date', new Date().toISOString().split('T')[0])
-        .order('appointment_date', { ascending: true })
+        .in('status', ['pending', 'confirmed'])
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
         .limit(1);
       if (appts?.length) setNextAppointment(appts[0]);
 
@@ -187,15 +187,19 @@ const HomepageFlow = ({ onNavigate }) => {
               UPCOMING APPOINTMENT
             </div>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#FFFFFF', marginBottom: 3 }}>
-              {nextAppointment.appointment_services?.[0]?.service_name || nextAppointment.appointment_type}
+              {nextAppointment.services_catalogue?.icon ? nextAppointment.services_catalogue.icon + ' ' : ''}
+              {nextAppointment.services_catalogue?.name || 'Appointment'}
             </div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-              {new Date(nextAppointment.appointment_date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              {' · '}{nextAppointment.appointment_time?.slice(0, 5)}
+              {nextAppointment.scheduled_at
+                ? new Date(nextAppointment.scheduled_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
+                  ' · ' + new Date(nextAppointment.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                : '—'
+              }
             </div>
-            {nextAppointment.location_name && (
+            {nextAppointment.service_locations?.name && (
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-                {nextAppointment.location_name}
+                {nextAppointment.service_locations.name}
               </div>
             )}
           </button>

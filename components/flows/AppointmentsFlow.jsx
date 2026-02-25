@@ -249,7 +249,7 @@ const AppointmentsFlow = ({ onNavigate }) => {
               <p className="text-sm text-gray-500 mb-6 max-w-xs">
                 {filterTab === 'upcoming'
                   ? 'Book a GP, mental health, or specialist appointment in minutes.'
-                  : 'Your appointment history will appear here once you've had a visit.'}
+                  : `Your appointment history will appear here once you've had a visit.`}
               </p>
               {filterTab !== 'past' && (
                 <button onClick={() => onNavigate('booking')}

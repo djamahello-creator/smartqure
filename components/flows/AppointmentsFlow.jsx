@@ -208,28 +208,56 @@ const AppointmentsFlow = ({ onNavigate }) => {
         </div>
 
         <div className="max-w-md mx-auto px-5 py-6">
-          {/* Error */}
+          {/* Error — styled as a calm empty state, not a scary banner */}
           {error && (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-red-800 font-medium">{error}</p>
-                <button onClick={fetchAppointments} className="text-xs text-red-600 underline mt-1">Retry</button>
+            <div className="flex flex-col items-center text-center py-10 px-4">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                style={{ background: 'linear-gradient(135deg, rgba(13,115,119,0.12), rgba(20,160,133,0.08))', border: '1.5px solid rgba(13,115,119,0.15)' }}>
+                <Calendar className="w-9 h-9" style={{ color: '#0D7377' }} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Appointments unavailable</h3>
+              <p className="text-sm text-gray-500 mb-1 max-w-xs">
+                We couldn't load your appointments right now.
+              </p>
+              <p className="text-xs text-gray-400 mb-6 max-w-xs">
+                This usually resolves on its own — try refreshing, or book a new appointment below.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={fetchAppointments}
+                  className="px-5 py-2.5 rounded-xl font-semibold text-sm border-2 border-gray-200 text-gray-700 hover:bg-gray-50">
+                  Try again
+                </button>
+                <button onClick={() => onNavigate('booking')}
+                  className="px-5 py-2.5 rounded-xl font-semibold text-sm text-white hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #0D7377, #14A085)' }}>
+                  Book New
+                </button>
               </div>
             </div>
           )}
 
           {/* Empty */}
           {!error && filtered.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-gray-400" />
+            <div className="flex flex-col items-center text-center py-10 px-4">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5"
+                style={{ background: 'linear-gradient(135deg, rgba(13,115,119,0.12), rgba(20,160,133,0.08))', border: '1.5px solid rgba(13,115,119,0.15)' }}>
+                <Calendar className="w-9 h-9" style={{ color: '#0D7377' }} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments</h3>
-              <p className="text-gray-500 mb-6">You don't have any {filterTab} appointments</p>
-              <button onClick={() => onNavigate('booking')} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700">
-                Book Your First Appointment
-              </button>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {filterTab === 'upcoming' ? 'No upcoming appointments' : filterTab === 'past' ? 'No past appointments' : 'No appointments yet'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-xs">
+                {filterTab === 'upcoming'
+                  ? 'Book a GP, mental health, or specialist appointment in minutes.'
+                  : 'Your appointment history will appear here once you've had a visit.'}
+              </p>
+              {filterTab !== 'past' && (
+                <button onClick={() => onNavigate('booking')}
+                  className="px-6 py-3 rounded-xl font-semibold text-sm text-white hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #0D7377, #14A085)' }}>
+                  Book an Appointment
+                </button>
+              )}
             </div>
           )}
 

@@ -1,0 +1,35 @@
+-- Seed data for WHO prequalified pharmaceutical manufacturers serving East Africa
+-- This file contains INSERT statements for ~30 manufacturers with relevant details
+-- Generated: 2026-02-23
+
+INSERT INTO manufacturers (name, short_name, country, country_code, gs1_company_prefix, who_prequalified, regulatory_approvals, website) VALUES
+('Cipla Limited', 'Cipla', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA', 'MHRA', 'EMA'], 'https://www.cipla.com'),
+('Aspen Pharmacare Holdings', 'Aspen', 'South Africa', 'ZA', '600', true, ARRAY['WHO-PQ', 'FDA', 'MHRA', 'EMA'], 'https://www.aspenpharma.com'),
+('Novartis AG', 'Novartis', 'Switzerland', 'CH', '760', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.novartis.com'),
+('Sanofi', 'Sanofi', 'France', 'FR', '300', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.sanofi.com'),
+('Aurobindo Pharma Limited', 'Aurobindo', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA', 'MHRA'], 'https://www.aurobindo.com'),
+('Mylan N.V. / Viatris Inc.', 'Viatris', 'USA', 'US', '012', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.viatris.com'),
+('GlaxoSmithKline plc', 'GSK', 'United Kingdom', 'GB', '500', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.gsk.com'),
+('Pfizer Inc.', 'Pfizer', 'USA', 'US', '013', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.pfizer.com'),
+('Gulf Pharmaceutical Industries (Julphar)', 'Julphar', 'United Arab Emirates', 'AE', '629', true, ARRAY['WHO-PQ', 'ADCQ', 'MHRA'], 'https://www.julphar.com'),
+('Sun Pharmaceutical Industries Limited', 'Sun Pharma', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA', 'MHRA'], 'https://www.sunpharma.com'),
+('Dr. Reddy''s Laboratories Limited', 'Dr Reddy''s', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.drreddys.com'),
+('Strides Pharma Science Limited', 'Strides', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA'], 'https://www.stridesph.com'),
+('Quality Chemical Industries Limited', 'QCI', 'Uganda', 'UG', '606', true, ARRAY['WHO-PQ', 'UDRA'], 'https://www.qci.co.ug'),
+('Universal Corporation Limited', 'Universal', 'Kenya', 'KE', '601', true, ARRAY['KEBS', 'KMPB'], 'https://www.universal.co.ke'),
+('Cosmos Limited', 'Cosmos', 'Kenya', 'KE', '601', true, ARRAY['KEBS', 'KMPB'], 'https://www.cosmospharma.co.ke'),
+('Roche Holding AG', 'Roche', 'Switzerland', 'CH', '760', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.roche.com'),
+('AstraZeneca PLC', 'AstraZeneca', 'United Kingdom', 'GB', '500', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.astrazeneca.com'),
+('Bayer AG', 'Bayer', 'Germany', 'DE', '400', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.bayer.com'),
+('AbbVie Inc.', 'AbbVie', 'USA', 'US', '014', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.abbvie.com'),
+('Merck & Co., Inc.', 'MSD', 'USA', 'US', '015', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.merck.com'),
+('Hetero Labs Limited', 'Hetero', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA'], 'https://www.heterolab.com'),
+('Macleods Pharmaceuticals Limited', 'Macleods', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA'], 'https://www.macleodspharma.com'),
+('Medochemie Limited', 'Medochemie', 'Cyprus', 'CY', '520', true, ARRAY['WHO-PQ', 'EMA', 'MHRA'], 'https://www.medochemie.com.cy'),
+('IPCA Laboratories Limited', 'IPCA', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA'], 'https://www.ipca.co.in'),
+('Hikma Pharmaceuticals PLC', 'Hikma', 'Jordan', 'JO', '629', true, ARRAY['WHO-PQ', 'FDA', 'EMA'], 'https://www.hikma.com'),
+('Actavis Group / Teva Pharmaceutical Industries', 'Teva', 'Israel', 'IL', '629', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.tevapharm.com'),
+('Indoco Remedies Limited', 'Indoco', 'India', 'IN', '890', true, ARRAY['WHO-PQ', 'FDA'], 'https://www.indoco.com'),
+('Pharmanova (Pty) Ltd', 'Pharmanova', 'South Africa', 'ZA', '600', true, ARRAY['WHO-PQ', 'SAPRA'], 'https://www.pharmanova.co.za'),
+('Sandoz International GmbH', 'Sandoz', 'Germany', 'DE', '400', true, ARRAY['WHO-PQ', 'FDA', 'EMA', 'MHRA'], 'https://www.sandoz.com'),
+('Remedica Limited', 'Remedica', 'Cyprus', 'CY', '520', true, ARRAY['WHO-PQ', 'EMA', 'MHRA'], 'https://www.remedica.com.cy');

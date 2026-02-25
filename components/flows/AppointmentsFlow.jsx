@@ -1,6 +1,6 @@
 // components/flows/AppointmentsFlow.jsx
-// Wired to Supabase — uses reconciled appointments schema (06_launch_schema_reconciliation.sql).
-// Joins services_catalogue, service_locations, clinician_profiles for display names.
+// Wired to Supabase — uses reconciled appointments schema (07_appointments_fix.sql).
+// Joins services_catalogue and service_locations via explicit FK hints.
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, User, ChevronRight, X, AlertCircle, Edit2, Trash2, Loader2, Plus } from 'lucide-react';
@@ -29,6 +29,9 @@ const AppointmentsFlow = ({ onNavigate }) => {
         .from('appointments')
         .select(`
           id,
+          service_id,
+          location_id,
+          clinician_id,
           appointment_type,
           status,
           scheduled_at,
@@ -40,15 +43,26 @@ const AppointmentsFlow = ({ onNavigate }) => {
           paid,
           video_room_url,
           created_at,
-          services_catalogue ( name, icon, category ),
-          service_locations ( name, address, location_type ),
-          clinician_profiles ( full_name )
+          services_catalogue!fk_appointments_service ( name, icon, category ),
+          service_locations!fk_appointments_location ( name, address, location_type ),
+          clinician_profiles!appointments_clinician_id_fkey ( full_name )
         `)
         .eq('user_id', user.id)
         .order('scheduled_at', { ascending: true });
 
-      if (fetchError) throw fetchError;
-      setAppointments(data || []);
+      if (fetchError) {
+        // FK joins failed — fall back to simple fetch without joins
+        console.warn('Join query failed, retrying without joins:', fetchError.message);
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('appointments')
+          .select('id, service_id, location_id, clinician_id, appointment_type, status, scheduled_at, duration_minutes, chief_complaint, notes, payment_method, fee_usd, paid, video_room_url, created_at')
+          .eq('user_id', user.id)
+          .order('scheduled_at', { ascending: true });
+        if (simpleError) throw simpleError;
+        setAppointments(simpleData || []);
+      } else {
+        setAppointments(data || []);
+      }
     } catch (err) {
       console.error('Appointments fetch error:', err);
       setError('Could not load appointments. Please try again.');

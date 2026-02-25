@@ -22,7 +22,7 @@ const SYSTEM_PROMPT = `You are SmartQure's AI Triage Navigator — a compassiona
 
 SmartQure's full service catalogue:
 
-MODULE A — SAFETY & VERIFICATION (MedVerify/RxQure)
+MODULE A — SAFETY & VERIFICATION (RxQure)
 - Medicine Authentication (barcode/QR scan)
 - Manual Batch Number Verification
 - AI Drug Interaction & Safety Checker

@@ -27,17 +27,23 @@ const ProfileFlow = ({ onNavigate }) => {
         .single();
 
       if (profile) {
+        const firstName = profile.first_name || user.user_metadata?.first_name || '';
+        const lastName  = profile.last_name  || user.user_metadata?.last_name  || '';
+        const fullName  = [firstName, lastName].filter(Boolean).join(' ') || 'User';
         setCurrentUser({
-          name: profile.first_name || 'User',
-          fullName: profile.full_name || profile.first_name || 'User',
+          name: firstName || fullName,
+          fullName,
           email: profile.email || user.email,
           verified: profile.verified || false,
           verifiedAt: profile.verified_at,
         });
       } else {
+        const firstName = user.user_metadata?.first_name || '';
+        const lastName  = user.user_metadata?.last_name  || '';
+        const fullName  = [firstName, lastName].filter(Boolean).join(' ') || 'User';
         setCurrentUser({
-          name: user.user_metadata?.first_name || 'User',
-          fullName: user.user_metadata?.first_name || 'User',
+          name: firstName || fullName,
+          fullName,
           email: user.email,
           verified: false,
         });
@@ -224,7 +230,7 @@ const ProfileFlow = ({ onNavigate }) => {
 
         {/* App Version */}
         <p className="text-center text-xs text-gray-500 mt-6">
-          MedVerify v1.0.0
+          SmartQure v1.0.0
         </p>
       </div>
     </div>

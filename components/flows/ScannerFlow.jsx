@@ -327,7 +327,7 @@ const ScannerFlow = ({ onNavigate }) => {
               <div className="bg-teal-500 rounded-lg p-1.5">
                 <Shield className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-base font-bold text-white">MedVerify Scanner</h1>
+              <h1 className="text-base font-bold text-white">SmartQure Scanner</h1>
             </div>
             <button
               onClick={() => {

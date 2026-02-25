@@ -1,13 +1,25 @@
-// MedVerifyApp.jsx - SmartQure Main Application Router
+// SmartQureApp.jsx - SmartQure Main Application Router
 'use client';
 import React, { useState } from 'react';
 
-// Core flows
+// ── Onboarding ────────────────────────────────────────────────────────────────
 import WelcomeFlow        from './WelcomeFlow';
 import AuthFlow           from './AuthFlow';
+
+// ── Home ──────────────────────────────────────────────────────────────────────
 import HomepageFlow       from './HomepageFlow';
 
-// RxQure — Medicine verification
+// ── Appointments & Booking ────────────────────────────────────────────────────
+import AppointmentsFlow   from './AppointmentsFlow';
+import BookingFlow        from './BookingFlow';
+
+// ── Health Records ────────────────────────────────────────────────────────────
+import HealthDocsFlow     from './HealthDocsFlow';
+
+// ── Prescriptions ─────────────────────────────────────────────────────────────
+import PrescriptionsFlow  from './PrescriptionsFlow';
+
+// ── RxQure — Medicine verification ───────────────────────────────────────────
 import ScannerFlow        from './ScannerFlow';
 import ManualEntryFlow    from './ManualEntryFlow';
 import ResultFlow         from './ResultFlow';
@@ -16,18 +28,18 @@ import HistoryDetailFlow  from './HistoryDetailFlow';
 import ReportFlow         from './ReportFlow';
 import AlertsFlow         from './AlertsFlow';
 
-// SmartQure Care Navigator (AI Triage)
+// ── AI Care Navigator (Triage) ────────────────────────────────────────────────
 import TriageFlow         from './TriageFlow';
 
-// Pharmacies
+// ── Pharmacies ────────────────────────────────────────────────────────────────
 import PharmaciesFlow     from './PharmaciesFlow';
 
-// Identity & Profile
+// ── Identity & Profile ────────────────────────────────────────────────────────
 import IDVerificationFlow from './IDVerificationFlow';
 import IDResultFlow       from './IDResultFlow';
 import ProfileFlow        from './ProfileFlow';
 
-// Shell
+// ── Shell ─────────────────────────────────────────────────────────────────────
 import BottomNav          from '../BottomNav';
 
 const SmartQureApp = () => {
@@ -44,7 +56,7 @@ const SmartQureApp = () => {
   const renderScreen = () => {
     switch (currentScreen) {
 
-      // ── Onboarding ────────────────────────────────────────────────────────
+      // ── Onboarding ──────────────────────────────────────────────────────────
       case 'welcome':
         return <WelcomeFlow onNavigate={navigateTo} />;
 
@@ -60,15 +72,30 @@ const SmartQureApp = () => {
           />
         );
 
-      // ── Main home ─────────────────────────────────────────────────────────
+      // ── Home ────────────────────────────────────────────────────────────────
       case 'homepage':
         return <HomepageFlow onNavigate={navigateTo} user={currentUser} />;
 
-      // ── AI Care Navigator (Triage) ────────────────────────────────────────
-      case 'triage':
-        return <TriageFlow onNavigate={navigateTo} user={currentUser} navigateTo={navigateTo} />;
+      // ── Appointments & Booking ───────────────────────────────────────────────
+      case 'appointments':
+        return <AppointmentsFlow onNavigate={navigateTo} user={currentUser} />;
 
-      // ── RxQure — Verification flows ───────────────────────────────────────
+      case 'booking':
+        return <BookingFlow onNavigate={navigateTo} user={currentUser} />;
+
+      // ── Health Records ───────────────────────────────────────────────────────
+      case 'health-docs':
+        return <HealthDocsFlow onNavigate={navigateTo} user={currentUser} />;
+
+      // ── Prescriptions ────────────────────────────────────────────────────────
+      case 'prescriptions':
+        return <PrescriptionsFlow onNavigate={navigateTo} user={currentUser} />;
+
+      // ── AI Care Navigator ────────────────────────────────────────────────────
+      case 'triage':
+        return <TriageFlow onNavigate={navigateTo} navigateTo={navigateTo} user={currentUser} />;
+
+      // ── RxQure — Verification flows ──────────────────────────────────────────
       case 'scanner':
         return <ScannerFlow onNavigate={navigateTo} />;
 
@@ -81,18 +108,16 @@ const SmartQureApp = () => {
       case 'result-caution':
         return <ResultFlow result="caution"   scan={screenData.scan} onNavigate={navigateTo} />;
 
-      // 'fake' from /api/verify maps here
       case 'result-fake':
         return <ResultFlow result="high_risk" scan={screenData.scan} onNavigate={navigateTo} />;
 
-      // legacy alias
       case 'result-high-risk':
         return <ResultFlow result="high_risk" scan={screenData.scan} onNavigate={navigateTo} />;
 
       case 'result-unknown':
         return <ResultFlow result="unknown"   scan={screenData.scan} onNavigate={navigateTo} />;
 
-      // ── History & reporting ───────────────────────────────────────────────
+      // ── History & Reporting ──────────────────────────────────────────────────
       case 'history':
         return <HistoryFlow onNavigate={navigateTo} />;
 
@@ -108,7 +133,7 @@ const SmartQureApp = () => {
       case 'pharmacies':
         return <PharmaciesFlow onNavigate={navigateTo} />;
 
-      // ── Identity verification ─────────────────────────────────────────────
+      // ── Identity Verification ────────────────────────────────────────────────
       case 'id-verification':
         return <IDVerificationFlow onNavigate={navigateTo} />;
 
@@ -118,7 +143,7 @@ const SmartQureApp = () => {
       case 'id-result-caution':
         return <IDResultFlow result="caution"  confidence={screenData.confidence || 60} onNavigate={navigateTo} />;
 
-      // ── Profile ───────────────────────────────────────────────────────────
+      // ── Profile ──────────────────────────────────────────────────────────────
       case 'profile':
         return <ProfileFlow onNavigate={navigateTo} />;
 
@@ -128,9 +153,10 @@ const SmartQureApp = () => {
   };
 
   const screensWithBottomNav = [
-    'homepage', 'history', 'history-detail',
-    'alerts', 'profile',
-    'result-verified', 'result-caution', 'result-fake', 'result-high-risk', 'result-unknown',
+    'homepage', 'appointments', 'history', 'history-detail',
+    'alerts', 'profile', 'prescriptions', 'health-docs',
+    'result-verified', 'result-caution', 'result-fake',
+    'result-high-risk', 'result-unknown',
   ];
 
   return (

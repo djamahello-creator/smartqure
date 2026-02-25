@@ -4,7 +4,7 @@
 // Triage sessions are persisted to Supabase via the API route.
 //
 // Props:
-//   navigateTo(screen, data) — from MedVerifyApp.jsx router
+//   navigateTo(screen, data) — from SmartQureApp.jsx router
 //   user — current Supabase auth user (can be null for anonymous)
 
 import { useState, useEffect, useRef } from 'react';

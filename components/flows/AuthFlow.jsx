@@ -97,14 +97,14 @@ const AuthFlow = ({ initialMode = 'login', onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-500 via-teal-600 to-teal-700 flex items-center justify-center p-6">
+    <div className="min-h-screen min-h-screen flex items-center justify-center p-6 flex items-center justify-center p-6">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="bg-white rounded-2xl p-4 shadow-xl mx-auto inline-block mb-4">
             <Shield className="w-12 h-12 text-teal-600" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-1">MedVerify</h1>
-          <p className="text-teal-100 text-sm">Medication Safety Platform</p>
+          <h1 className="text-2xl font-bold text-white mb-1" style={{fontFamily:"'Space Grotesk', sans-serif"}}>SmartQure</h1>
+          <p className="text-sm" style={{color:"rgba(255,255,255,0.5)",fontFamily:"'Inter', sans-serif"}}>Your connected health platform</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-6">

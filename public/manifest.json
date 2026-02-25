@@ -1,11 +1,11 @@
 {
-  "name": "MedVerify - Medication Safety",
-  "short_name": "MedVerify",
-  "description": "Verify medication authenticity and protect against counterfeits",
+  "name": "SmartQure — Smarter Healthcare",
+  "short_name": "SmartQure",
+  "description": "East Africa's connected health platform. Verify medications, book consultations, manage your health records.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#14B8A6",
+  "background_color": "#0A1628",
+  "theme_color": "#0D7377",
   "orientation": "portrait",
   "icons": [
     {
